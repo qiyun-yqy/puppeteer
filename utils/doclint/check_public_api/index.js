@@ -20,35 +20,26 @@ const Documentation = require('./Documentation');
 const Message = require('../Message');
 
 const EXCLUDE_CLASSES = new Set([
+  'CSSCoverage',
   'Connection',
+  'Downloader',
   'EmulationManager',
   'FrameManager',
+  'JSCoverage',
   'Helper',
   'Launcher',
   'Multimap',
   'NavigatorWatcher',
   'NetworkManager',
-  'ProxyStream',
-  'Session',
   'TaskQueue',
   'WaitTask',
 ]);
 
 const EXCLUDE_METHODS = new Set([
-  'Body.constructor',
-  'Browser.constructor',
-  'Dialog.constructor',
-  'ElementHandle.constructor',
-  'Frame.constructor',
-  'Headers.constructor',
+  'Browser.create',
   'Headers.fromPayload',
-  'Keyboard.constructor',
-  'Mouse.constructor',
-  'Tracing.constructor',
-  'Page.constructor',
   'Page.create',
-  'Request.constructor',
-  'Response.constructor',
+  'JSHandle.toString',
 ]);
 
 /**
@@ -143,6 +134,9 @@ function filterJSDocumentation(jsDocumentation) {
     const members = cls.membersArray.filter(member => {
       if (member.name.startsWith('_'))
         return false;
+      // Exclude all constructors by default.
+      if (member.name === 'constructor' && member.type === 'method')
+        return false;
       return !EXCLUDE_METHODS.has(`${cls.name}.${member.name}`);
     });
     classes.push(new Documentation.Class(cls.name, members));
@@ -164,9 +158,9 @@ function checkDuplicates(doc) {
     classes.add(cls.name);
     const members = new Set();
     for (const member of cls.membersArray) {
-      if (members.has(member.name))
-        errors.push(`Duplicate declaration of method ${cls.name}.${member.name}()`);
-      members.add(member.name);
+      if (members.has(member.type + ' ' + member.name))
+        errors.push(`Duplicate declaration of ${member.type} ${cls.name}.${member.name}()`);
+      members.add(member.type + ' ' + member.name);
       const args = new Set();
       for (const arg of member.argsArray) {
         if (args.has(arg.name))

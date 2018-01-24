@@ -15,6 +15,16 @@
  */
 const transformAsyncFunctions = require('../TransformAsyncFunctions');
 
+const {TestRunner, Reporter, Matchers}  = require('../../testrunner/');
+const runner = new TestRunner();
+new Reporter(runner);
+
+const {describe, xdescribe, fdescribe} = runner;
+const {it, fit, xit} = runner;
+const {beforeAll, beforeEach, afterAll, afterEach} = runner;
+
+const {expect} = new Matchers();
+
 describe('TransformAsyncFunctions', function() {
   it('should convert a function expression', function(done) {
     const input = `(async function(){ return 123 })()`;
@@ -70,4 +80,12 @@ describe('TransformAsyncFunctions', function() {
     expect(output instanceof Promise).toBe(true);
     output.then(result => expect(result).toBe(123)).then(done);
   });
+  it('should work paren around arrow function', function(done) {
+    const input = `(async x => ( 123))()`;
+    const output = eval(transformAsyncFunctions(input));
+    expect(output instanceof Promise).toBe(true);
+    output.then(result => expect(result).toBe(123)).then(done);
+  });
 });
+
+runner.run();
